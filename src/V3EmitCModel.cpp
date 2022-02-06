@@ -684,6 +684,10 @@ class EmitCModel final : public EmitCFunc {
         m_modp = modp;
         emitHeader(modp);
         emitImplementation(modp);
+	if (v3Global.opt.euvm()){
+	    EmitDModel::emitDFile(modp);
+	    EmitDModel::emitCHelperFile(modp);
+	}
         if (v3Global.dpi()) emitDpiExportDispatchers(modp);
     }
 

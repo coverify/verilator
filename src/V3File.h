@@ -257,6 +257,13 @@ private:
     }
 };
 
+class V3OutDFile final : public V3OutFile {
+    explicit V3OutDFile(const string& filename)
+	: V3OutFile{filename, V3OutFormatter::LA_C} {
+    }
+    virtual ~V3OutDFile() override = default;
+}
+
 class V3OutCFile VL_NOT_FINAL : public V3OutFile {
     int m_guard = false;  // Created header guard
     int m_private;  // 1 = Most recently emitted private:, 2 = public:
