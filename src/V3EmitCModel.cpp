@@ -723,7 +723,7 @@ class EmitCModel final : public EmitCFunc {
     void emitDFile(AstNodeModule* modp){
 	UASSERT(!m_ofp, "Output file should not be open");
 
-	const string filename = v3Global.opt.makeDir() + "/" + topClassName() + "_esdl.d";
+	const string filename = v3Global.opt.makeDir() + "/" + topClassName() + "_esdl.di";
 	newCFile(filename, /* slow: */ false, /* source: */ false);
 	m_ofp = new V3OutCFile(filename);
 	puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ classes\n\n");
