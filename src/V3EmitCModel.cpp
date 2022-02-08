@@ -720,10 +720,10 @@ class EmitCModel final : public EmitCFunc {
 	puts("}\n");
     }
 
-    void emitDFile(AstNodeModule* modp){
+    void emitEuvmDFile(AstNodeModule* modp){
 	UASSERT(!m_ofp, "Output file should not be open");
 
-	const string filename = v3Global.opt.makeDir() + "/" + topClassName() + "_esdl.di";
+	const string filename = "euvmFiles/" + topClassName() + "_euvm.d";
 	newCFile(filename, /* slow: */ false, /* source: */ false);
 	m_ofp = new V3OutCFile(filename);
 	puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ classes\n\n");
@@ -793,9 +793,9 @@ class EmitCModel final : public EmitCFunc {
 	VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
     }
 
-    void emitCHelperFile(AstNodeModule* modp){
+    void emitEuvmCFile(AstNodeModule* modp){
 	UASSERT(!m_ofp, "Output file should not be open");
-	const string filename = v3Global.opt.makeDir() + "/" + topClassName() + "_esdl.cpp";
+	const string filename = "euvmFiles/" + topClassName() + "_euvm_funcs.cpp";
 	newCFile(filename, /* slow: */ false, /* source: */ false);
 	m_ofp = new V3OutCFile(filename);
 	puts("#include \"" + topClassName() + ".h\"\n\n");
@@ -819,8 +819,8 @@ class EmitCModel final : public EmitCFunc {
         emitHeader(modp);
         emitImplementation(modp);
 	if (v3Global.opt.euvm()){
-	    emitDFile(modp);
-	    emitCHelperFile(modp);
+	    emitEuvmDFile(modp);
+	    emitEuvmCFile(modp);
 	}
         if (v3Global.dpi()) emitDpiExportDispatchers(modp);
     }
