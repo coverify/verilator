@@ -770,7 +770,7 @@ class EmitCModel final : public EmitCFunc {
 	puts(topClassName() + " top;\n\n");
 	//constructor function
 	puts("this (){\n");
-	puts("top = new " + topClassName() + "();\n");
+	puts("top = _esdl__constructor_" + topClassName() + "();\n");
 	puts("}\n");
 	puts("\n//Functions for Ports \n");
 	for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
