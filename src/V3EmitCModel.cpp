@@ -727,6 +727,8 @@ class EmitCModel final : public EmitCFunc {
 	m_ofp = new V3OutCFile(filename);
         if (v3Global.opt.trace())
 	    puts("import esdl.intf.verilator.verilated: VerilatedContext, VerilatedVcdC, VerilatedVcdD;\n");
+	else
+	    puts("import esdl.intf.verilator.verilated: VerilatedContext;\n");
     
 	puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ classes\n\n");
 	puts("\n");
