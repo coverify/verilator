@@ -680,7 +680,7 @@ class EmitCModel final : public EmitCFunc {
         if (ofp()) closeOutputFile();
     }
     
-    void emitDPionterDecl (const AstVar* nodep){
+    void emitDPionterDecl (const AstVar* nodep) {
     
 	if (nodep->isQuad()) {
 	    puts("ulong* ");
@@ -694,13 +694,12 @@ class EmitCModel final : public EmitCFunc {
 	    puts("uint* ");
 	}
 
-	puts("_esdl__ptr_");
 	puts(nodep->nameProtect().c_str());
 	puts(";\n");
     }
 
-    void emitDFunction (const AstVar* nodep){
-	puts("\nref ");
+    void emitDFunction (const AstVar* nodep) {
+	puts("\nfinal ref ");
 	if (nodep->isQuad()) {
 	    puts("ulong ");
 	} else if (nodep->widthMin() <= 8) {
@@ -713,26 +712,31 @@ class EmitCModel final : public EmitCFunc {
 	    puts("uint ");
 	}
 	puts(nodep->nameProtect().c_str());
-	puts("(){\n");
-	puts("return *(top._esdl__ptr_");
+	puts("() {\n");
+	puts("return *(top.");
 	puts(nodep->nameProtect().c_str());
 	puts(");\n");
 	puts("}\n");
     }
 
-    void emitEuvmDFile(AstNodeModule* modp){
+    void emitEuvmDFile(AstNodeModule* modp) {
 	UASSERT(!m_ofp, "Output file should not be open");
 
-	const string filename = "euvmFiles/" + topClassName() + "_euvm.d";
+	const string filename = "euvm_dir/" + topClassName() + "_euvm.d";
 	newCFile(filename, /* slow: */ false, /* source: */ false);
 	m_ofp = new V3OutCFile(filename);
+        if (v3Global.opt.trace())
+	    puts("import esdl.intf.verilator.verilated: VerilatedContext, VerilatedVcdC, VerilatedVcdD;\n");
+    
 	puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ classes\n\n");
+	puts("\n");
 
 	puts("extern(C++) {\n");
-    
-	puts("class " + topClassName() + "{\n");
+
+	puts("align(8) class " + topClassName() + "{\n");
 	puts("//Symbol table, currently unimplemented, using void pointer\n");
 	puts("void* vlSymsp;\n");
+	
 	puts("\n//PORTS \n");
 	for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
 	    if (const AstVar* const varp = VN_CAST(nodep, Var)) {
@@ -751,15 +755,33 @@ class EmitCModel final : public EmitCFunc {
 	}
 	puts("\n// Root instance pointer, currently unimplemented, using void pointers \n");
 	puts("void* rootp;\n");
+
+	puts("~this();\n");
+	
+	puts("final void eval();\n");
+	puts("final void eval_step();\n");
+	puts("final void eval_end_step();\n");
+	// puts("final void final();\n");
+
+        if (v3Global.opt.trace())
+	    puts("final void trace(VerilatedVcdC tfp, int levels, int options = 0);\n");
+	/// Return current simulation context for this model.
+	/// Used to get to e.g. simulation time via contextp()->time()
+
+	puts("final VerilatedContext* contextp() const;\n");
+	
+	puts("final const(char*) name();\n");
+	
 	//end of topmost class
 	puts("}\n");
 
 	// function declarations
 	// external constructor for the top class
-	puts(topClassName() + " _esdl__constructor_" + topClassName() + "();\n");
-	puts("void _esdl__evaluate(" + topClassName() + " obj);\n");
-	puts("void _esdl__final(" + topClassName() + " obj);\n\n");
-
+	puts(topClassName() + " create_" + topClassName() + "();\n");
+	// puts("void eval(" + topClassName() + " obj);\n");
+	puts("void finalize(" + topClassName() + " obj);\n\n");
+	puts("void traceEverOn(bool flag);\n\n");
+	
 	//end extern
 	puts("}\n");
 
@@ -769,8 +791,8 @@ class EmitCModel final : public EmitCFunc {
 	//pointer to C++ class
 	puts(topClassName() + " top;\n\n");
 	//constructor function
-	puts("this (){\n");
-	puts("top = _esdl__constructor_" + topClassName() + "();\n");
+	puts("this () {\n");
+	puts("top = create_" + topClassName() + "();\n");
 	puts("}\n");
 	puts("\n//Functions for Ports \n");
 	for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
@@ -781,36 +803,51 @@ class EmitCModel final : public EmitCFunc {
 	    }
 	}
 	//eval function
-	puts("void eval() {\n");
-	puts("_esdl__evaluate(top);\n");
+	puts("final void eval() {\n");
+	puts("top.eval();\n");
 	puts("}\n");
 	//final function, named it finish
-	puts("void finish() {\n");
-	puts("_esdl__final(top);\n");
+	puts("final void finish() {\n");
+	puts("finalize(top);\n");
 	puts("}\n");
+        if (v3Global.opt.trace()) {
+	    puts("final void trace(VerilatedVcdD tfp, int levels, int options = 0) {\n");
+	    puts("top.trace(tfp.getVcdC(), levels, options);\n");
+	    puts("}\n");
+	    puts("final void trace(VerilatedVcdC tfp, int levels, int options = 0) {\n");
+	    puts("top.trace(tfp, levels, options);\n");
+	    puts("}\n");
+
+	}
 	//class end
 	puts("}\n"); 
 	VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
     }
 
-    void emitEuvmCFile(AstNodeModule* modp){
+    void emitEuvmCFile(AstNodeModule* modp) {
 	UASSERT(!m_ofp, "Output file should not be open");
-	const string filename = "euvmFiles/" + topClassName() + "_euvm_funcs.cpp";
+	const string filename = "euvm_dir/" + topClassName() + "_euvm_funcs.cpp";
 	newCFile(filename, /* slow: */ false, /* source: */ false);
 	m_ofp = new V3OutCFile(filename);
 	puts("#include \"" + topClassName() + ".h\"\n\n");
-	puts(topClassName() + "* _esdl__constructor_" + topClassName() + "(){\n");
+
+        // if (v3Global.opt.trace())
+	//     puts("#include \"verilated_vcd_d.h\"\n\n");
+	
+	puts(topClassName() + "* create_" + topClassName() + "() {\n");
 	puts("return new " + topClassName() + "();\n");
 	puts("}\n");
 	puts("\n");
-	puts("void _esdl__evaluate (" + topClassName() + "* obj){\n");
+	puts("void eval (" + topClassName() + "* obj) {\n");
 	puts("obj->eval();\n");
 	puts("}\n");
 	puts("\n");
-	puts("void _esdl__final (" + topClassName() + "* obj){\n");
+	puts("void finalize (" + topClassName() + "* obj) {\n");
 	puts("obj->final();\n");
 	puts("}\n");
-	puts("\n");
+	puts("void traceEverOn(bool flag) {\n");
+	puts("Verilated::traceEverOn(flag);\n");
+	puts("}\n");
 	VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
     }
 
@@ -818,7 +855,7 @@ class EmitCModel final : public EmitCFunc {
         m_modp = modp;
         emitHeader(modp);
         emitImplementation(modp);
-	if (v3Global.opt.euvm()){
+	if (v3Global.opt.euvm()) {
 	    emitEuvmDFile(modp);
 	    emitEuvmCFile(modp);
 	}
