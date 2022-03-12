@@ -320,7 +320,7 @@ void V3File::createMakeDir() {
     if (!created) {
         created = true;
         V3Os::createDir(v3Global.opt.makeDir());
-	if (v3Global.opt.euvm()) V3Os::createDir("euvmFiles");
+	if (v3Global.opt.euvm()) V3Os::createDir("euvm_dir");
         if (v3Global.opt.hierTop()) V3Os::createDir(v3Global.opt.hierTopDataDir());
     }
 }
