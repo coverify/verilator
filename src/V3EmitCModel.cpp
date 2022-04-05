@@ -713,10 +713,27 @@ class EmitCModel final : public EmitCFunc {
 	}
 	puts(nodep->nameProtect().c_str());
 	puts("() {\n");
-	puts("return *(top.");
+	puts("return *(_dut.");
 	puts(nodep->nameProtect().c_str());
 	puts(");\n");
 	puts("}\n");
+    }
+
+    void emitDVlExports (const AstVar* nodep) {
+	puts("VlExport!");
+	if (nodep->isQuad()) {
+	    puts("ulong ");
+	} else if (nodep->widthMin() <= 8) {
+	    puts("ubyte ");
+	} else if (nodep->widthMin() <= 16) {
+	    puts("ushort ");
+	} else if (nodep->isWide()) {
+	    // puts("void* ");
+	} else {
+	    puts("uint ");
+	}
+	puts(nodep->nameProtect().c_str());
+	puts(";\n");
     }
 
     void emitEuvmDFile(AstNodeModule* modp) {
@@ -725,10 +742,11 @@ class EmitCModel final : public EmitCFunc {
 	const string filename = "euvm_dir/" + topClassName() + "_euvm.d";
 	newCFile(filename, /* slow: */ false, /* source: */ false);
 	m_ofp = new V3OutCFile(filename);
+	puts("import esdl.base.core: Entity;\n");
         if (v3Global.opt.trace())
-	    puts("import esdl.intf.verilator.verilated: VerilatedContext, VerilatedVcdC, VerilatedVcdD;\n");
+	    puts("import esdl.intf.verilator.verilated: VerilatedContext, VlExport, VerilatedVcdC, VerilatedVcdD;\n");
 	else
-	    puts("import esdl.intf.verilator.verilated: VerilatedContext;\n");
+	    puts("import esdl.intf.verilator.verilated: VerilatedContext, VlExport;\n");
     
 	puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ classes\n\n");
 	puts("\n");
@@ -789,35 +807,49 @@ class EmitCModel final : public EmitCFunc {
 
 
 	//wrapper class definition
-	puts("class D" + topClassName() + "{\n\n");
+	puts("class D" + topClassName() + ": Entity\n {\n");
 	//pointer to C++ class
-	puts(topClassName() + " top;\n\n");
+	puts(topClassName() + " _dut;\n\n");
 	//constructor function
 	puts("this () {\n");
-	puts("top = create_" + topClassName() + "();\n");
+	puts("_dut = create_" + topClassName() + "();\n");
+	puts("}\n");
+	puts("override void doConnect() {\n");
+	for (const AstNode* nodep = modp->stmtsp(); nodep;
+	     nodep = nodep->nextp()) {
+	    if (const AstVar* const varp = VN_CAST(nodep, Var)) {
+		if (varp->isPrimaryIO()) {
+		    puts(nodep->nameProtect().c_str());
+		    puts("(_dut.");
+		    puts(nodep->nameProtect().c_str());
+		    puts(");\n");
+		}
+	    }
+	}
 	puts("}\n");
 	puts("\n//Functions for Ports \n");
 	for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
 	    if (const AstVar* const varp = VN_CAST(nodep, Var)) {
 		if (varp->isPrimaryIO()) { 
-		    emitDFunction(varp);
+		    // emitDFunction(varp);
+		    emitDVlExports(varp);
 		}
 	    }
 	}
 	//eval function
 	puts("final void eval() {\n");
-	puts("top.eval();\n");
+	puts("_dut.eval();\n");
 	puts("}\n");
 	//final function, named it finish
 	puts("final void finish() {\n");
-	puts("finalize(top);\n");
+	puts("finalize(_dut);\n");
 	puts("}\n");
         if (v3Global.opt.trace()) {
 	    puts("final void trace(VerilatedVcdD tfp, int levels, int options = 0) {\n");
-	    puts("top.trace(tfp.getVcdC(), levels, options);\n");
+	    puts("_dut.trace(tfp.getVcdC(), levels, options);\n");
 	    puts("}\n");
 	    puts("final void trace(VerilatedVcdC tfp, int levels, int options = 0) {\n");
-	    puts("top.trace(tfp, levels, options);\n");
+	    puts("_dut.trace(tfp, levels, options);\n");
 	    puts("}\n");
 
 	}
