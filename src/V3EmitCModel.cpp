@@ -681,36 +681,13 @@ class EmitCModel final : public EmitCFunc {
     }
     
     void emitDPionterDecl (const AstVar* nodep) {
-    
-	if (nodep->isQuad()) {
-	    puts("ulong* ");
-	} else if (nodep->widthMin() <= 8) {
-	    puts("ubyte* ");
-	} else if (nodep->widthMin() <= 16) {
-	    puts("ushort* ");
-	} else if (nodep->isWide()) {
-	    // puts("void* ");
-	} else {
-	    puts("uint* ");
-	}
-
-	puts(nodep->nameProtect().c_str());
-	puts(";\n");
+	puts("ubvec!(" + cvtToStr(nodep->widthMin()) + ")* " +
+	     nodep->nameProtect().c_str() + ";\n");
     }
 
     void emitDFunction (const AstVar* nodep) {
-	puts("\nfinal ref ");
-	if (nodep->isQuad()) {
-	    puts("ulong ");
-	} else if (nodep->widthMin() <= 8) {
-	    puts("ubyte ");
-	} else if (nodep->widthMin() <= 16) {
-	    puts("ushort ");
-	} else if (nodep->isWide()) {
-	    // puts("void* ");
-	} else {
-	    puts("uint ");
-	}
+	puts("\nfinal ref ubvec!(" +
+	     cvtToStr(nodep->widthMin()) + ") ");
 	puts(nodep->nameProtect().c_str());
 	puts("() {\n");
 	puts("return *(_dut.");
@@ -720,20 +697,8 @@ class EmitCModel final : public EmitCFunc {
     }
 
     void emitDVlExports (const AstVar* nodep) {
-	puts("VlExport!");
-	if (nodep->isQuad()) {
-	    puts("ulong ");
-	} else if (nodep->widthMin() <= 8) {
-	    puts("ubyte ");
-	} else if (nodep->widthMin() <= 16) {
-	    puts("ushort ");
-	} else if (nodep->isWide()) {
-	    // puts("void* ");
-	} else {
-	    puts("uint ");
-	}
-	puts(nodep->nameProtect().c_str());
-	puts(";\n");
+	puts("VlExport!(" + cvtToStr(nodep->widthMin()) + ") " +
+	     nodep->nameProtect().c_str() + ";\n");
     }
 
     void emitEuvmDFile(AstNodeModule* modp) {
@@ -743,10 +708,12 @@ class EmitCModel final : public EmitCFunc {
 	newCFile(filename, /* slow: */ false, /* source: */ false);
 	m_ofp = new V3OutCFile(filename);
 	puts("import esdl.base.core: Entity;\n");
+	puts("import esdl.data.bvec: ubvec;\n");
+	puts("import esdl.intf.verilator.verilated: VlExport;\n");
         if (v3Global.opt.trace())
-	    puts("import esdl.intf.verilator.verilated: VerilatedContext, VlExport, VerilatedVcdC, VerilatedVcdD;\n");
+	    puts("import esdl.intf.verilator.trace: VerilatedContext, VerilatedVcdC, VerilatedVcdD;\n");
 	else
-	    puts("import esdl.intf.verilator.verilated: VerilatedContext, VlExport;\n");
+	    puts("import esdl.intf.verilator.trace: VerilatedContext;\n");
     
 	puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ classes\n\n");
 	puts("\n");
