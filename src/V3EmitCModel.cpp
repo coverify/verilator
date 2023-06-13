@@ -720,7 +720,20 @@ class EmitCModel final : public EmitCFunc {
 
 	puts("extern(C++) {\n");
 
-	puts("align(8) class " + topClassName() + "{\n");
+	puts("abstract class VerilatedModel {\n");
+	puts("VerilatedContext* m_context;\n");
+	
+	puts("this(VerilatedContext* context);\n");
+	puts("~this() {};\n");
+    
+	puts("final VerilatedContext* contextp() {return m_context;}\n");
+	puts("char* hierName() const;\n");
+	puts("char* modelName() const;\n");
+	puts("uint threads() const;\n");
+	puts("// ..\n");
+	puts("};\n");
+
+	puts("align(8) class " + topClassName() + ": VerilatedModel {\n");
 	puts("//Symbol table, currently unimplemented, using void pointer\n");
 	puts("void* vlSymsp;\n");
 	
@@ -743,6 +756,8 @@ class EmitCModel final : public EmitCFunc {
 	puts("\n// Root instance pointer, currently unimplemented, using void pointers \n");
 	puts("void* rootp;\n");
 
+	puts("this(VerilatedContext* contextp, const char* name = \"TOP\".ptr);\n");
+    
 	puts("~this();\n");
 	
 	puts("final void eval();\n");
@@ -759,6 +774,9 @@ class EmitCModel final : public EmitCFunc {
 	
 	puts("final const(char*) name();\n");
 	
+	puts("final override char* hierName() const;\n");
+	puts("final override char* modelName() const;\n");
+	puts("final override uint threads() const;\n");
 	//end of topmost class
 	puts("}\n");
 
