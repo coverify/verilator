@@ -1185,8 +1185,8 @@ void V3Options::parseOptsList(FileLine* fl, const string& optdir, int argc,
     DECL_OPTION("-CFLAGS", CbVal, callStrSetter(&V3Options::addCFlags));
     DECL_OPTION("-cc", CbCall, [this]() { ccSet(); });
     DECL_OPTION("-euvm", CbCall, [this]() {
-	m_outFormatOk = true;
-	m_euvm = true;
+        m_outFormatOk = true;
+        m_euvm = true;
     });
     DECL_OPTION("-clk", CbVal, callStrSetter(&V3Options::addClocker));
     DECL_OPTION("-no-clk", CbVal, callStrSetter(&V3Options::addNoClocker));
