@@ -747,7 +747,7 @@ class EmitCModel final : public EmitCFunc {
         puts("\n// CELLS\n//Currently unimplemented, using void pointers \n");
         for (AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
             if (const AstCell* const cellp = VN_CAST(nodep, Cell)) {
-                puts("void* const ");
+                puts("void* ");
                 puts(cellp->nameProtect());
                 puts(";\n");
             }
