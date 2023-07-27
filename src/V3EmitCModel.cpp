@@ -784,8 +784,6 @@ class EmitCModel final : public EmitCFunc {
         puts(topClassName() + " create_" + topClassName() + "();\n");
         // puts("void eval(" + topClassName() + " obj);\n");
         puts("void finalize(" + topClassName() + " obj);\n\n");
-        puts("void traceEverOn(bool flag);\n\n");
-
         // end extern
         puts("}\n");
 
@@ -859,9 +857,6 @@ class EmitCModel final : public EmitCFunc {
         puts("\n");
         puts("void finalize (" + topClassName() + "* obj) {\n");
         puts("obj->final();\n");
-        puts("}\n");
-        puts("void traceEverOn(bool flag) {\n");
-        puts("Verilated::traceEverOn(flag);\n");
         puts("}\n");
         VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
     }
