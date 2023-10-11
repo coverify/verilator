@@ -708,31 +708,16 @@ class EmitCModel final : public EmitCFunc {
         m_ofp = new V3OutCFile(filename);
         puts("import esdl.base.core: Entity;\n");
         puts("import esdl.data.bvec: ubvec;\n");
-        puts("import esdl.intf.verilator.verilated: VlExport;\n");
+        puts("import esdl.intf.verilator.verilated: VerilatedContext, VerilatedModel, VlExport;\n");
         if (v3Global.opt.trace())
-            puts("import esdl.intf.verilator.trace: VerilatedContext, VerilatedVcdC, "
+            puts("import esdl.intf.verilator.trace: VerilatedVcdC, "
                  "VerilatedVcdD;\n");
-        else
-            puts("import esdl.intf.verilator.trace: VerilatedContext;\n");
 
         puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ "
              "classes\n\n");
         puts("\n");
 
         puts("extern(C++) {\n");
-
-        puts("abstract class VerilatedModel {\n");
-        puts("VerilatedContext* m_context;\n");
-
-        puts("this(VerilatedContext* context);\n");
-        puts("~this() {};\n");
-
-        puts("final VerilatedContext* contextp() {return m_context;}\n");
-        puts("char* hierName() const;\n");
-        puts("char* modelName() const;\n");
-        puts("uint threads() const;\n");
-        puts("// ..\n");
-        puts("};\n");
 
         puts("align(8) class " + topClassName() + ": VerilatedModel {\n");
         puts("//Symbol table, currently unimplemented, using void pointer\n");
