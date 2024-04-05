@@ -708,7 +708,8 @@ class EmitCModel final : public EmitCFunc {
         m_ofp = new V3OutCFile(filename);
         puts("import esdl.base.core: Entity;\n");
         puts("import esdl.data.bvec: ubvec;\n");
-        puts("import esdl.intf.verilator.verilated: VerilatedContext, VerilatedModel, VlExport;\n");
+        puts(
+            "import esdl.intf.verilator.verilated: VerilatedContext, VerilatedModel, VlExport;\n");
         if (v3Global.opt.trace())
             puts("import esdl.intf.verilator.trace: VerilatedVcdC, "
                  "VerilatedVcdD;\n");
