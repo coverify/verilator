@@ -754,8 +754,8 @@ class EmitCModel final : public EmitCFunc {
             puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0) {\n");
             puts("  contextp().trace(tfp, levels, options);\n");
             puts("}\n");
-	}
-	// puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0);\n");
+        }
+        // puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0);\n");
         /// Return current simulation context for this model.
         /// Used to get to e.g. simulation time via contextp()->time()
 
@@ -855,10 +855,10 @@ class EmitCModel final : public EmitCFunc {
         m_modp = modp;
         emitHeader(modp);
         emitImplementation(modp);
-	if (v3Global.opt.euvm()) {
-	    emitEuvmDFile(modp);
-	    emitEuvmCFile(modp);
-	}
+        if (v3Global.opt.euvm()) {
+            emitEuvmDFile(modp);
+            emitEuvmCFile(modp);
+        }
         if (v3Global.dpi()) emitDpiExportDispatchers(modp);
     }
 
