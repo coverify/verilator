@@ -709,175 +709,156 @@ class EmitCModel final : public EmitCFunc {
 	m_ofp = new V3OutCFile(filename);
 	puts("import esdl.base.core: Entity;\n");
 	puts("import esdl.data.bvec: ubvec;\n");
-	puts("import esdl.intf.verilator.verilated: VlExport;\n");
+	puts("import esdl.intf.verilator.verilated: VerilatedContext, VerilatedModel, VlExport;\n");
         if (v3Global.opt.trace())
-	    puts("import esdl.intf.verilator.trace: VerilatedContext, VerilatedVcdC, VerilatedVcdD;\n");
-	else
-	    puts("import esdl.intf.verilator.trace: VerilatedContext;\n");
-    
-	puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ classes\n\n");
-	puts("\n");
+            puts("import esdl.intf.verilator.trace: VerilatedVcdC, VerilatedTraceBaseC,"
+                 "VerilatedVcdD;\n");
 
-	puts("extern(C++) {\n");
+        puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ "
+             "classes\n\n");
+        puts("\n");
 
-	puts("abstract class VerilatedModel {\n");
-	puts("VerilatedContext* m_context;\n");
-	
-	puts("this(VerilatedContext* context);\n");
-	puts("~this() {};\n");
-    
-	puts("final VerilatedContext* contextp() {return m_context;}\n");
-	puts("char* hierName() const;\n");
-	puts("char* modelName() const;\n");
-	puts("uint threads() const;\n");
-	puts("// ..\n");
-	puts("};\n");
+        puts("extern(C++) {\n");
 
-	puts("align(8) class " + topClassName() + ": VerilatedModel {\n");
-	puts("//Symbol table, currently unimplemented, using void pointer\n");
-	puts("void* vlSymsp;\n");
-	
-	puts("\n//PORTS \n");
-	for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
-	    if (const AstVar* const varp = VN_CAST(nodep, Var)) {
-		if (varp->isPrimaryIO()) { 
-		    emitDPionterDecl(varp);
-		}
-	    }
-	}
-	puts("\n// CELLS\n//Currently unimplemented, using void pointers \n");
-	for (AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
-	    if (const AstCell* const cellp = VN_CAST(nodep, Cell)) {
-		puts("void* const ");
-		puts(cellp->nameProtect());
-		puts(";\n");
-	    }
-	}
-	puts("\n// Root instance pointer, currently unimplemented, using void pointers \n");
-	puts("void* rootp;\n");
+        puts("align(8) class " + topClassName() + ": VerilatedModel {\n");
+        puts("//Symbol table, currently unimplemented, using void pointer\n");
+        puts("void* vlSymsp;\n");
 
-	puts("this(VerilatedContext* contextp, const char* name = \"TOP\".ptr);\n");
-    
-	puts("~this();\n");
-	
-	puts("final void eval();\n");
-	puts("final void eval_step();\n");
-	puts("final void eval_end_step();\n");
-	// puts("final void final();\n");
+        puts("\n//PORTS \n");
+        for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
+            if (const AstVar* const varp = VN_CAST(nodep, Var)) {
+                if (varp->isPrimaryIO()) { emitDPionterDecl(varp); }
+            }
+        }
+        puts("\n// CELLS\n//Currently unimplemented, using void pointers \n");
+        for (AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
+            if (const AstCell* const cellp = VN_CAST(nodep, Cell)) {
+                puts("void* ");
+                puts(cellp->nameProtect());
+                puts(";\n");
+            }
+        }
+        puts("\n// Root instance pointer, currently unimplemented, using void pointers \n");
+        puts("void* rootp;\n");
 
-        if (v3Global.opt.trace())
-	    puts("final void trace(VerilatedVcdC tfp, int levels, int options = 0);\n");
-	/// Return current simulation context for this model.
-	/// Used to get to e.g. simulation time via contextp()->time()
+        puts("this(VerilatedContext* contextp, const char* name = \"TOP\".ptr);\n");
 
-	puts("final VerilatedContext* contextp() const;\n");
-	
-	puts("final const(char*) name();\n");
-	
-	puts("final override char* hierName() const;\n");
-	puts("final override char* modelName() const;\n");
-	puts("final override uint threads() const;\n");
-	//end of topmost class
-	puts("}\n");
+        puts("~this();\n");
 
-	// function declarations
-	// external constructor for the top class
-	puts(topClassName() + " create_" + topClassName() + "();\n");
-	// puts("void eval(" + topClassName() + " obj);\n");
-	puts("void finalize(" + topClassName() + " obj);\n\n");
-	puts("void traceEverOn(bool flag);\n\n");
-	
-	//end extern
-	puts("}\n");
+        puts("final void eval();\n");
+        puts("final void eval_step();\n");
+        puts("final void eval_end_step();\n");
+        // puts("final void final();\n");
 
-
-	//wrapper class definition
-	puts("class D" + topClassName() + ": Entity\n {\n");
-	//pointer to C++ class
-	puts(topClassName() + " _dut;\n\n");
-	//constructor function
-	puts("this () {\n");
-	puts("_dut = create_" + topClassName() + "();\n");
-	puts("}\n");
-	puts("override void doConnect() {\n");
-	for (const AstNode* nodep = modp->stmtsp(); nodep;
-	     nodep = nodep->nextp()) {
-	    if (const AstVar* const varp = VN_CAST(nodep, Var)) {
-		if (varp->isPrimaryIO()) {
-		    puts(nodep->nameProtect().c_str());
-		    puts("(_dut.");
-		    puts(nodep->nameProtect().c_str());
-		    puts(");\n");
-		}
-	    }
-	}
-	puts("}\n");
-	puts("\n//Functions for Ports \n");
-	for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
-	    if (const AstVar* const varp = VN_CAST(nodep, Var)) {
-		if (varp->isPrimaryIO()) { 
-		    // emitDFunction(varp);
-		    emitDVlExports(varp);
-		}
-	    }
-	}
-	//eval function
-	puts("final void eval() {\n");
-	puts("_dut.eval();\n");
-	puts("}\n");
-	//final function, named it finish
-	puts("final void finish() {\n");
-	puts("finalize(_dut);\n");
-	puts("}\n");
         if (v3Global.opt.trace()) {
-	    puts("final void trace(VerilatedVcdD tfp, int levels, int options = 0) {\n");
-	    puts("_dut.trace(tfp.getVcdC(), levels, options);\n");
-	    puts("}\n");
-	    puts("final void trace(VerilatedVcdC tfp, int levels, int options = 0) {\n");
-	    puts("_dut.trace(tfp, levels, options);\n");
-	    puts("}\n");
+            puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0) {\n");
+            puts("  contextp().trace(tfp, levels, options);\n");
+            puts("}\n");
+        }
+        // puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0);\n");
+        /// Return current simulation context for this model.
+        /// Used to get to e.g. simulation time via contextp()->time()
 
-	}
-	//class end
-	puts("}\n"); 
-	VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
+        // puts("final VerilatedContext* contextp() const;\n");
+
+        puts("final const(char*) name();\n");
+
+        puts("final override char* hierName() const;\n");
+        puts("final override char* modelName() const;\n");
+        puts("final override uint threads() const;\n");
+        // end of topmost class
+        puts("}\n");
+
+        // function declarations
+        // external constructor for the top class
+        puts(topClassName() + " create_" + topClassName() + "();\n");
+        // puts("void eval(" + topClassName() + " obj);\n");
+        puts("void finalize(" + topClassName() + " obj);\n\n");
+        // end extern
+        puts("}\n");
+
+        // wrapper class definition
+        puts("class D" + topClassName() + ": Entity\n {\n");
+        // pointer to C++ class
+        puts(topClassName() + " _dut;\n\n");
+        // constructor function
+        puts("this () {\n");
+        puts("_dut = create_" + topClassName() + "();\n");
+        puts("}\n");
+        puts("override void doConnect() {\n");
+        for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
+            if (const AstVar* const varp = VN_CAST(nodep, Var)) {
+                if (varp->isPrimaryIO()) {
+                    puts(nodep->nameProtect().c_str());
+                    puts("(_dut.");
+                    puts(nodep->nameProtect().c_str());
+                    puts(");\n");
+                }
+            }
+        }
+        puts("}\n");
+        puts("\n//Functions for Ports \n");
+        for (const AstNode* nodep = modp->stmtsp(); nodep; nodep = nodep->nextp()) {
+            if (const AstVar* const varp = VN_CAST(nodep, Var)) {
+                if (varp->isPrimaryIO()) {
+                    // emitDFunction(varp);
+                    emitDVlExports(varp);
+                }
+            }
+        }
+        // eval function
+        puts("final void eval() {\n");
+        puts("_dut.eval();\n");
+        puts("}\n");
+        // final function, named it finish
+        puts("final void finish() {\n");
+        puts("finalize(_dut);\n");
+        puts("}\n");
+        if (v3Global.opt.trace()) {
+            puts("final void trace(VerilatedVcdD tfp, int levels, int options = 0) {\n");
+            puts("_dut.trace(tfp.getTraceBase(), levels, options);\n");
+            puts("}\n");
+            puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0) {\n");
+            puts("_dut.trace(tfp, levels, options);\n");
+            puts("}\n");
+        }
+        // class end
+        puts("}\n");
+        VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
     }
 
     void emitEuvmCFile(AstNodeModule* modp) {
-	UASSERT(!m_ofp, "Output file should not be open");
-	const string filename = "euvm_dir/" + topClassName() + "_euvm_funcs.cpp";
-	newCFile(filename, /* slow: */ false, /* source: */ false);
-	m_ofp = new V3OutCFile(filename);
-	puts("#include \"" + topClassName() + ".h\"\n\n");
+        UASSERT(!m_ofp, "Output file should not be open");
+        const string filename = "euvm_dir/" + topClassName() + "_euvm_funcs.cpp";
+        newCFile(filename, /* slow: */ false, /* source: */ false);
+        m_ofp = new V3OutCFile(filename);
+        puts("#include \"" + topClassName() + ".h\"\n\n");
 
         // if (v3Global.opt.trace())
-	//     puts("#include \"verilated_vcd_d.h\"\n\n");
-	
-	puts(topClassName() + "* create_" + topClassName() + "() {\n");
-	puts("return new " + topClassName() + "();\n");
-	puts("}\n");
-	puts("\n");
-	puts("void eval (" + topClassName() + "* obj) {\n");
-	puts("obj->eval();\n");
-	puts("}\n");
-	puts("\n");
-	puts("void finalize (" + topClassName() + "* obj) {\n");
-	puts("obj->final();\n");
-	puts("}\n");
-	puts("void traceEverOn(bool flag) {\n");
-	puts("Verilated::traceEverOn(flag);\n");
-	puts("}\n");
-	VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
+        //     puts("#include \"verilated_vcd_d.h\"\n\n");
+
+        puts(topClassName() + "* create_" + topClassName() + "() {\n");
+        puts("return new " + topClassName() + "();\n");
+        puts("}\n");
+        puts("\n");
+        puts("void eval (" + topClassName() + "* obj) {\n");
+        puts("obj->eval();\n");
+        puts("}\n");
+        puts("\n");
+        puts("void finalize (" + topClassName() + "* obj) {\n");
+        puts("obj->final();\n");
+        puts("}\n");
+        VL_DO_CLEAR(delete m_ofp, m_ofp = nullptr);
     }
 
     void main(AstNodeModule* modp) {
         m_modp = modp;
         emitHeader(modp);
         emitImplementation(modp);
-	if (v3Global.opt.euvm()) {
-	    emitEuvmDFile(modp);
-	    emitEuvmCFile(modp);
-	}
+        if (v3Global.opt.euvm()) {
+            emitEuvmDFile(modp);
+            emitEuvmCFile(modp);
+        }
         if (v3Global.dpi()) emitDpiExportDispatchers(modp);
     }
 
