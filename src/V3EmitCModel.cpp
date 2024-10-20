@@ -711,7 +711,7 @@ class EmitCModel final : public EmitCFunc {
         puts(
             "import esdl.intf.verilator.verilated: VerilatedContext, VerilatedModel, VlExport;\n");
         if (v3Global.opt.trace())
-            puts("import esdl.intf.verilator.trace: VerilatedVcdC, "
+            puts("import esdl.intf.verilator.trace: VerilatedVcdC, VerilatedTraceBaseC,"
                  "VerilatedVcdD;\n");
 
         puts("\n//DESCRIPTION: Dlang code to link D classes and functions with the C++ "
@@ -750,12 +750,16 @@ class EmitCModel final : public EmitCFunc {
         puts("final void eval_end_step();\n");
         // puts("final void final();\n");
 
-        if (v3Global.opt.trace())
-            puts("final void trace(VerilatedVcdC tfp, int levels, int options = 0);\n");
+        if (v3Global.opt.trace()) {
+            puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0) {\n");
+            puts("  contextp().trace(tfp, levels, options);\n");
+            puts("}\n");
+	}
+	// puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0);\n");
         /// Return current simulation context for this model.
         /// Used to get to e.g. simulation time via contextp()->time()
 
-        puts("final VerilatedContext* contextp() const;\n");
+        // puts("final VerilatedContext* contextp() const;\n");
 
         puts("final const(char*) name();\n");
 
@@ -812,9 +816,9 @@ class EmitCModel final : public EmitCFunc {
         puts("}\n");
         if (v3Global.opt.trace()) {
             puts("final void trace(VerilatedVcdD tfp, int levels, int options = 0) {\n");
-            puts("_dut.trace(tfp.getVcdC(), levels, options);\n");
+            puts("_dut.trace(tfp.getTraceBase(), levels, options);\n");
             puts("}\n");
-            puts("final void trace(VerilatedVcdC tfp, int levels, int options = 0) {\n");
+            puts("final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0) {\n");
             puts("_dut.trace(tfp, levels, options);\n");
             puts("}\n");
         }
